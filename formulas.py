@@ -160,15 +160,17 @@ for formula in ["Vuotto", "Méndez", "Acciarri", "Marshall"]:
             indemnizaciones.append(formula_marshall(salario_anual, i, n, incapacidad))
     resultados_por_formula[formula] = indemnizaciones
 
-# Scatter plots individuales
+# Scatter plots individuales sin leyenda
 st.subheader("Tendencia por edad (fórmulas clásicas)")
+st.caption("Línea: tendencia | Punto rojo: edad ingresada")
 cols = st.columns(4)
 for idx, formula in enumerate(["Vuotto", "Méndez", "Acciarri", "Marshall"]):
     df = pd.DataFrame({"Edad": edades, "Indemnización": resultados_por_formula[formula]})
     fig = px.scatter(df, x="Edad", y="Indemnización", size_max=6)
-    fig.add_scatter(x=edades, y=resultados_por_formula[formula], mode="lines", line=dict(width=1), name="Tendencia")
-    fig.add_scatter(x=[edad_evento], y=[resultados_por_formula[formula][edad_evento - min_age]], mode="markers", marker=dict(color="red", size=10), name="Edad ingresada")
-    fig.update_layout(title=formula, margin=dict(l=10, r=10, t=30, b=10), height=250)
+    fig.add_scatter(x=edades, y=resultados_por_formula[formula], mode="lines", line=dict(width=1), showlegend=False)
+    fig.add_scatter(x=[edad_evento], y=[resultados_por_formula[formula][edad_evento - min_age]], mode="markers",
+                    marker=dict(color="red", size=10), showlegend=False)
+    fig.update_layout(title=formula, margin=dict(l=10, r=10, t=30, b=10), height=250, showlegend=False)
     cols[idx].plotly_chart(fig, use_container_width=True)
 
 # Gráfico comparativo con línea vertical
@@ -179,6 +181,5 @@ for formula in ["Vuotto", "Méndez", "Acciarri", "Marshall"]:
 
 fig_comparativo.add_shape(type="line", x0=edad_evento, y0=0, x1=edad_evento, y1=max(max(vals) for vals in resultados_por_formula.values()), line=dict(color="red", width=2, dash="dash"))
 fig_comparativo.update_layout(title="Comparación de fórmulas vs Edad", xaxis_title="Edad", yaxis_title="Indemnización", height=500)
-st.plotly_chart(fig_comparativo, use_container_width=True)
 
 
