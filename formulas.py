@@ -66,7 +66,7 @@ if salario_mensual <= 0:
 salario_anual = salario_mensual * 13
 
 # Selector de fórmulas
-formulas_sel = st.multiselect("Selecciona fórmulas", ["Vuotto", "Méndez", "Acciarri", "Marshall", "Local"], default=["Vuotto", "Méndez"])
+formulas_sel = st.multiselect("Selecciona fórmulas", ["Vuotto", "Méndez", "Acciarri", "Marshall", "Local"], default=["Vuotto", "Méndez", "Acciarri", "Marshall", "Local")
 interes_default = {"Vuotto": 0.06, "Méndez": 0.04, "Acciarri": 0.04, "Marshall": 0.06}
 
 # Criterio de cálculo
@@ -181,6 +181,7 @@ for formula in ["Vuotto", "Méndez", "Acciarri", "Marshall"]:
 
 fig_comparativo.add_shape(type="line", x0=edad_evento, y0=0, x1=edad_evento, y1=max(max(vals) for vals in resultados_por_formula.values()), line=dict(color="red", width=2, dash="dash"))
 fig_comparativo.update_layout(title="Comparación de fórmulas vs Edad", xaxis_title="Edad", yaxis_title="Indemnización", height=500)
+
 
 
 
