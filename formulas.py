@@ -257,8 +257,7 @@ fig_comparativo = go.Figure()
 colors = {"Vuotto": "blue", "Méndez": "green", "Acciarri": "orange", "Marshall": "purple"}
 for formula in ["Vuotto", "Méndez", "Acciarri", "Marshall"]:
     fig_comparativo.add_trace(go.Scatter(x=edades, y=resultados_por_formula[formula], mode="lines", name=formula, line=dict(width=2, color=colors[formula])))
-
 fig_comparativo.add_shape(type="line", x0=edad_evento, y0=0, x1=edad_evento, y1=max(max(vals) for vals in resultados_por_formula.values()), line=dict(color="red", width=2, dash="dash"))
 fig_comparativo.update_layout(title="Comparación de fórmulas vs Edad", xaxis_title="Edad", yaxis_title="Indemnización", height=500)
-
+st.plotly_chart(fig_comparativo, use_container_width=True)
 
