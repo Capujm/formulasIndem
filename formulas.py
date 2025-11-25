@@ -146,9 +146,9 @@ tasa_interes = col8.number_input("Tasa interés anual (%)", min_value=0.0, max_v
 st.subheader("Salario")
 colS1, colS2, colS3, colS4 = st.columns(4)
 salario_mensual = colS1.number_input("Salario mensual", min_value=0.0, step=50000.0, value=0.0, help="Si se deja en 0, se usa SMVM vigente.")
-tipo_salario = colS4.radio("Tipo", ["Valor actual", "Valor histórico"], index=0)
-puntos_psico = colS2.number_input("Incapacidad psicológica (puntos)", min_value=0.0, max_value=100.0, step=0.5, value=0.0)
-dano_moral_pct = colS3.number_input("Daño moral (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0) / 100
+tipo_salario = colS2.radio("Tipo", ["Valor actual", "Valor histórico"], index=0)
+puntos_psico = colS3.number_input("Incapacidad psicológica (puntos)", min_value=0.0, max_value=100.0, step=0.5, value=0.0)
+dano_moral_pct = colS4.number_input("Daño moral (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0) / 100
 fecha_calculo = st.date_input("Fecha de cálculo", value=date.today(), max_value=date.today())
 usar_nd = st.checkbox("Índice No Decreciente (SRT/ART)", value=True)
 
@@ -291,6 +291,7 @@ for formula in ["Vuotto", "Méndez", "Acciarri", "Marshall"]:
 fig_comparativo.add_shape(type="line", x0=edad_evento, y0=0, x1=edad_evento, y1=max(max(vals) for vals in resultados_por_formula.values()), line=dict(color="red", width=2, dash="dash"))
 fig_comparativo.update_layout(title="Comparación de fórmulas vs Edad", xaxis_title="Edad", yaxis_title="Indemnización", height=500)
 st.plotly_chart(fig_comparativo, use_container_width=True)
+
 
 
 
