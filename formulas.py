@@ -13,6 +13,45 @@ import plotly.graph_objects as go
 from datetime import datetime, date
 import io
 
+import pandas as pd
+
+# Función para cargar serie RIPTE desde CSV local
+def cargar_ripte(path="data/ripte.csv"):
+    try:
+        df = pd.read_csv(path)
+    except Exception:
+        st.error("No se encontró el archivo RIPTE en data/ripte.csv. Suba el CSV con columnas: fecha (YYYY-MM), indice.")
+        uploaded = st.file_uploader("Subir CSV RIPTE", type=["csv"])
+        if uploaded:
+            df = pd.read_csv(uploaded)
+        else:
+            return pd.DataFrame()
+    df.columns = [c.lower().strip() for c in df.columns]
+    if "fecha" not in df.columns or "indice" not in df.columns:
+        st.error("El CSV debe tener columnas 'fecha' y 'indice'.")
+        return pd.DataFrame()
+    df['fecha'] = pd.to_datetime(df['fecha']).dt.to_period('M')
+    df = df.sort_values('fecha').reset_index(drop=True)
+    return df
+
+def coef_ripte(df, fecha_inicial, fecha_final):
+    if df.empty:
+        return 1.0, None, None
+    pi = pd.Period(f"{fecha_inicial.year}-{fecha_inicial.month:02d}")
+    pf = pd.Period(f"{fecha_final.year}-{fecha_final.month:02d}")
+    # Ajustar si no existe el periodo exacto
+    if pi not in set(df['fecha']):
+        anteriores = df[df['fecha'] <= pi]['fecha']
+        pi = anteriores.max() if not anteriores.empty else df['fecha'].min()
+    if pf not in set(df['fecha']):
+        anteriores = df[df['fecha'] <= pf]['fecha']
+        pf = anteriores.max() if not anteriores.empty else df['fecha'].max()
+    vi = float(df.loc[df['fecha'] == pi, 'indice'].iloc[0])
+    vf = float(df.loc[df['fecha'] == pf, 'indice'].iloc[0])
+    coef = vf / vi if vi > 0 else 1.0
+    return coef, pi, pf
+
+
 # Constante: Salario mínimo vital y móvil (SMVM) Argentina
 SMVM = 322000  # mensual
 
@@ -61,9 +100,31 @@ col7, col8 = st.columns(2)
 valor_punto = col7.number_input("Valor del punto", min_value=0.0, value=500000.0)
 tasa_interes = col8.number_input("Tasa interés anual (%)", min_value=0.0, max_value=100.0, step=0.5, value=6.0) / 100
 
+
+# Selector tipo de salario
+st.subheader("Tipo de salario")
+tipo_salario = st.radio("¿Qué salario usar?", ["Valor actual", "Valor histórico"], index=0)
+fecha_calculo = st.date_input("Fecha de cálculo", value=date.today(), max_value=date.today())
+fecha_salario_historico = None
+ripte_df = pd.DataFrame()
+coef_aplicado = 1.0
+periodo_inicial_usado = None
+periodo_final_usado = None
+if tipo_salario == "Valor histórico":
+    fecha_salario_historico = st.date_input("Fecha del salario histórico", value=fecha_hecho, min_value=date(1990,1,1), max_value=date.today())
+    ripte_df = cargar_ripte()
+    if salario_mensual > 0 and not ripte_df.empty:
+        coef_aplicado, periodo_inicial_usado, periodo_final_usado = coef_ripte(ripte_df, fecha_salario_historico, fecha_calculo)
+        salario_mensual = salario_mensual * coef_aplicado
+
 if salario_mensual <= 0:
     salario_mensual = SMVM
 salario_anual = salario_mensual * 13
+
+# Mostrar info RIPTE si se aplicó
+if tipo_salario == "Valor histórico" and coef_aplicado != 1.0:
+    st.info(f"RIPTE aplicado: coeficiente {coef_aplicado:.4f}. Periodo inicial: {periodo_inicial_usado}, final: {periodo_final_usado}. Salario actualizado: $ {salario_mensual:,.0f}")
+
 
 # Selector de fórmulas
 formulas_sel = st.multiselect("Selecciona fórmulas", ["Vuotto", "Méndez", "Acciarri", "Marshall", "Local"], default=["Vuotto", "Méndez", "Acciarri", "Marshall", "Local"])
@@ -181,10 +242,3 @@ for formula in ["Vuotto", "Méndez", "Acciarri", "Marshall"]:
 
 fig_comparativo.add_shape(type="line", x0=edad_evento, y0=0, x1=edad_evento, y1=max(max(vals) for vals in resultados_por_formula.values()), line=dict(color="red", width=2, dash="dash"))
 fig_comparativo.update_layout(title="Comparación de fórmulas vs Edad", xaxis_title="Edad", yaxis_title="Indemnización", height=500)
-
-
-
-
-
-
-
