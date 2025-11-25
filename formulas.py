@@ -15,6 +15,58 @@ import plotly.graph_objects as go
 from datetime import datetime, date
 import io
 
+import pandas as pd
+
+@st.cache_data
+def cargar_ripte(path="data/ripte.csv"):
+    try:
+        df = pd.read_csv(path)
+    except Exception:
+        st.error("No se encontró el archivo RIPTE en data/ripte.csv. Suba el CSV con columnas: fecha (YYYY-MM), indice.")
+        uploaded = st.file_uploader("Subir CSV RIPTE", type=["csv"])
+        if uploaded:
+            df = pd.read_csv(uploaded)
+        else:
+            return pd.DataFrame()
+    df.columns = [c.lower().strip() for c in df.columns]
+    if "fecha" not in df.columns or "indice" not in df.columns:
+        st.error("El CSV debe tener columnas 'fecha' y 'indice'.")
+        return pd.DataFrame()
+    df['fecha'] = pd.to_datetime(df['fecha']).dt.to_period('M')
+    df['indice'] = pd.to_numeric(df['indice'], errors='coerce')
+    df = df.dropna().sort_values('fecha').drop_duplicates(subset=['fecha'], keep='last').reset_index(drop=True)
+    return df
+
+def seleccionar_periodos(df, fecha_inicial, fecha_final):
+    if df.empty:
+        return None, None
+    pi = pd.Period(f"{fecha_inicial.year}-{fecha_inicial.month:02d}")
+    pf = pd.Period(f"{fecha_final.year}-{fecha_final.month:02d}")
+    if pf < pi:
+        pi, pf = pf, pi
+    if pi not in set(df['fecha']):
+        ant = df[df['fecha'] <= pi]['fecha']
+        pi = ant.max() if not ant.empty else df['fecha'].min()
+    if pf not in set(df['fecha']):
+        ant = df[df['fecha'] <= pf]['fecha']
+        pf = ant.max() if not ant.empty else df['fecha'].max()
+    pf = min(pf, df['fecha'].max())
+    return pi, pf
+
+def coeficiente_ripte(df, pi, pf, usar_nd=True):
+    if df.empty or pi is None or pf is None:
+        return 1.0
+    serie = df.copy()
+    if usar_nd:
+        serie['indice_nd'] = serie['indice'].cummax()
+        vi = float(serie.loc[serie['fecha'] == pi, 'indice_nd'].iloc[0])
+        vf = float(serie.loc[serie['fecha'] == pf, 'indice_nd'].iloc[0])
+    else:
+        vi = float(serie.loc[serie['fecha'] == pi, 'indice'].iloc[0])
+        vf = float(serie.loc[serie['fecha'] == pf, 'indice'].iloc[0])
+    return vf / vi if vi > 0 else 1.0
+
+
 # Constante: Salario mínimo vital y móvil (SMVM) Argentina
 SMVM = 322000  # mensual
 
@@ -56,15 +108,37 @@ puntos_fisicos = col3.number_input("Incapacidad física (puntos)", min_value=0.0
 
 
 col7, col8 = st.columns(2)
-valor_punto = col7.number_input("Valor del punto", min_value=0.0, step=50000.0, value=500000.0)
+valor_punto = col7.number_input("Valor del punto", min_value=0.0, value=500000.0)
 tasa_interes = col8.number_input("Tasa interés anual (%)", min_value=0.0, max_value=100.0, step=0.5, value=6.0) / 100
 
-# Bloque de salario reorganizado
+# Bloque de salario reorganizado con RIPTE
 st.subheader("Salario")
-colS1, colS2, colS3 = st.columns(3)
+colS1, colS2, colS3, colS4 = st.columns(4)
 salario_mensual = colS1.number_input("Salario mensual", min_value=0.0, step=50000.0, value=0.0, help="Si se deja en 0, se usa SMVM vigente.")
 puntos_psico = colS2.number_input("Incapacidad psicológica (puntos)", min_value=0.0, max_value=100.0, step=0.5, value=0.0)
 dano_moral_pct = colS3.number_input("Daño moral (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0) / 100
+tipo_salario = colS4.radio("Tipo", ["Valor actual", "Valor histórico"], index=0)
+fecha_calculo = st.date_input("Fecha de cálculo", value=date.today(), max_value=date.today())
+usar_nd = st.checkbox("Índice No Decreciente (SRT/ART)", value=True)
+
+ripte_df = pd.DataFrame()
+coef_aplicado = 1.0
+periodo_inicial_usado = None
+periodo_final_usado = None
+if tipo_salario == "Valor histórico":
+    ripte_df = cargar_ripte()
+    if salario_mensual > 0 and not ripte_df.empty:
+        pi, pf = seleccionar_periodos(ripte_df, fecha_hecho, fecha_calculo)
+        coef_aplicado = coeficiente_ripte(ripte_df, pi, pf, usar_nd=usar_nd)
+        salario_mensual = salario_mensual * coef_aplicado
+        periodo_inicial_usado, periodo_final_usado = pi, pf
+
+if salario_mensual <= 0:
+    salario_mensual = SMVM
+salario_anual = salario_mensual * 13
+
+if tipo_salario == "Valor histórico" and periodo_inicial_usado is not None:
+    st.info(f"RIPTE aplicado: coef {coef_aplicado:.4f}. Periodo inicial: {periodo_inicial_usado}, final: {periodo_final_usado}. Salario actualizado: $ {salario_mensual:,.0f}")
 
 if salario_mensual <= 0:
     salario_mensual = SMVM
@@ -186,4 +260,5 @@ for formula in ["Vuotto", "Méndez", "Acciarri", "Marshall"]:
 
 fig_comparativo.add_shape(type="line", x0=edad_evento, y0=0, x1=edad_evento, y1=max(max(vals) for vals in resultados_por_formula.values()), line=dict(color="red", width=2, dash="dash"))
 fig_comparativo.update_layout(title="Comparación de fórmulas vs Edad", xaxis_title="Edad", yaxis_title="Indemnización", height=500)
+
 
