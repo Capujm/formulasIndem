@@ -55,11 +55,11 @@ puntos_fisicos = col3.number_input("Incapacidad física (puntos)", min_value=0.0
 col4, col5, col6 = st.columns(3)
 salario_mensual = col4.number_input("Salario mensual (opcional)", min_value=0.0, value=0.0)
 puntos_psico = col5.number_input("Incapacidad psicológica (puntos)", min_value=0.0, max_value=100.0, step=0.5, value=0.0)
-dano_moral_pct = col6.number_input("Daño moral (%)", min_value=0.0, max_value=100.0, step=0.5, value=0.0) / 100
+dano_moral_pct = col6.number_input("Daño moral (%)", min_value=0.0, max_value=100.0, step=1, value=0.0) / 100
 
 col7, col8 = st.columns(2)
 valor_punto = col7.number_input("Valor del punto", min_value=0.0, value=500000.0)
-tasa_interes = col8.number_input("Tasa interés anual (%)", min_value=0.0, max_value=100.0, step=0.1, value=6.0) / 100
+tasa_interes = col8.number_input("Tasa interés anual (%)", min_value=0.0, max_value=100.0, step=0.5, value=6.0) / 100
 
 if salario_mensual <= 0:
     salario_mensual = SMVM
@@ -181,5 +181,6 @@ for formula in ["Vuotto", "Méndez", "Acciarri", "Marshall"]:
 
 fig_comparativo.add_shape(type="line", x0=edad_evento, y0=0, x1=edad_evento, y1=max(max(vals) for vals in resultados_por_formula.values()), line=dict(color="red", width=2, dash="dash"))
 fig_comparativo.update_layout(title="Comparación de fórmulas vs Edad", xaxis_title="Edad", yaxis_title="Indemnización", height=500)
+
 
 
