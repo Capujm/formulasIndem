@@ -7,6 +7,7 @@ Integración RIPTE con índice (IB 07/1994 = 100) y mejoras de inputs solicitada
 - Opción de usar Índice No Decreciente (SRT/ART) para evitar coeficientes < 1.
 """
 
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -55,14 +56,15 @@ puntos_fisicos = col3.number_input("Incapacidad física (puntos)", min_value=0.0
 
 
 col7, col8 = st.columns(2)
-valor_punto = col7.number_input("Valor del punto", min_value=0.0, value=500000.0)
+valor_punto = col7.number_input("Valor del punto", min_value=0.0, step=50000.0, value=500000.0)
 tasa_interes = col8.number_input("Tasa interés anual (%)", min_value=0.0, max_value=100.0, step=0.5, value=6.0) / 100
 
 # Bloque de salario reorganizado
 st.subheader("Salario")
-colS1, colS2 = st.columns(2)
+colS1, colS2, colS3 = st.columns(3)
 salario_mensual = colS1.number_input("Salario mensual", min_value=0.0, step=50000.0, value=0.0, help="Si se deja en 0, se usa SMVM vigente.")
 puntos_psico = colS2.number_input("Incapacidad psicológica (puntos)", min_value=0.0, max_value=100.0, step=0.5, value=0.0)
+dano_moral_pct = colS3.number_input("Daño moral (%)", min_value=0.0, max_value=100.0, step=1.0, value=0.0) / 100
 
 if salario_mensual <= 0:
     salario_mensual = SMVM
@@ -184,10 +186,4 @@ for formula in ["Vuotto", "Méndez", "Acciarri", "Marshall"]:
 
 fig_comparativo.add_shape(type="line", x0=edad_evento, y0=0, x1=edad_evento, y1=max(max(vals) for vals in resultados_por_formula.values()), line=dict(color="red", width=2, dash="dash"))
 fig_comparativo.update_layout(title="Comparación de fórmulas vs Edad", xaxis_title="Edad", yaxis_title="Indemnización", height=500)
-
-
-
-
-
-
 
