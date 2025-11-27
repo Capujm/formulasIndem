@@ -186,7 +186,8 @@ criterio = st.radio("Criterio de cálculo de años restantes (n)", ["Usar edad a
 edad_base = edad_evento
 edad_actual = edad_evento
 hoy = date.today()
-anos_transcurridos = (hoy.year - fecha_hecho.year) - ((hoy.month, hoy.day) < (fecha_hecho.month, fecha_hecho.day))
+dias_transcurridos = (hoy - fecha_hecho).days
+anos_transcurridos = dias_transcurridos / 365
 if criterio == "Recalcular con edad actual":
     edad_base = max(edad_evento + anos_transcurridos, 0)
     edad_actual = edad_base
@@ -291,6 +292,7 @@ for formula in ["Vuotto", "Méndez", "Acciarri", "Marshall"]:
 fig_comparativo.add_shape(type="line", x0=edad_evento, y0=0, x1=edad_evento, y1=max(max(vals) for vals in resultados_por_formula.values()), line=dict(color="red", width=2, dash="dash"))
 fig_comparativo.update_layout(title="Comparación de fórmulas vs Edad", xaxis_title="Edad", yaxis_title="Indemnización", height=500)
 st.plotly_chart(fig_comparativo, use_container_width=True)
+
 
 
 
