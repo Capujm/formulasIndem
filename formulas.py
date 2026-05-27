@@ -68,7 +68,7 @@ def coeficiente_ripte(df, pi, pf, usar_nd=True):
 
 
 # Constante: Salario mínimo vital y móvil (SMVM) Argentina
-SMVM = 334800  # mensual
+SMVM = 363000  # mensual
 
 # Función para coeficiente actuarial
 def coeficiente_actuarial(i, n):
